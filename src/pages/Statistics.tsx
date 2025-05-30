@@ -8,7 +8,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+} from "recharts";
 import { MailType, MailStats } from "@/types/mail";
 
 // Fonctions utilitaires pour lire les courriers du localStorage
@@ -39,7 +51,6 @@ const monthNames = [
 
 // Préparer les statistiques mensuelles et annuelles à partir des courriers stockés
 function computeMonthlyStats(incomings: any[], outgoings: any[]): MailStats[] {
-  // Objet : { [year-month]: { ... } }
   const statsMap: { [key: string]: MailStats } = {};
 
   incomings.forEach((mail) => {
@@ -94,10 +105,8 @@ function computeMonthlyStats(incomings: any[], outgoings: any[]): MailStats[] {
       };
     }
     statsMap[key].outgoingCount += 1;
-    // Pour outgoing, on ne connaît pas forcément le type, donc on n'incrémente pas byType
   });
 
-  // Trie par année puis par mois
   return Object.values(statsMap).sort((a, b) => {
     if (a.year !== b.year) return a.year - b.year;
     return monthNames.indexOf(a.month) - monthNames.indexOf(b.month);
@@ -144,23 +153,18 @@ const preparePieChartData = (stat: MailStats | undefined) => {
 };
 
 const StatisticsPage: React.FC = () => {
-  // On relit à chaque render pour que ce soit toujours à jour si formulaire utilisé dans un autre onglet
   const incomingMails = getAllIncomingMails();
   const outgoingMails = getAllOutgoingMails();
   const monthlyStats = useMemo(() => computeMonthlyStats(incomingMails, outgoingMails), [incomingMails, outgoingMails]);
 
-  // Récupère toutes les années et tous les mois présents dans les stats réelles
   const years = Array.from(new Set(monthlyStats.map((s) => s.year))).sort((a, b) => b - a);
-  const months = monthNames.filter((m) => monthlyStats.find((s) => s.month === m));
+  const months = monthNames.filter((m) => monthlyStats.find((s) => s.month === m)) as string[];
 
-  // Valeurs par défaut : dernier mois/année disponible ou valeurs pré-remplies
   const [selectedYear, setSelectedYear] = useState<number>(years[0] || new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState<string>(months[months.length - 1] || monthNames[new Date().getMonth()]);
 
-  // Les stats du mois/année filtrés
   const monthlyStat = monthlyStats.find((stat) => stat.year === selectedYear && stat.month === selectedMonth);
 
-  // Données pour graphiques
   const barChartData = prepareBarChartData(monthlyStats.filter(stat => stat.year === selectedYear));
   const pieChartData = preparePieChartData(monthlyStat);
 
