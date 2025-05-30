@@ -168,6 +168,10 @@ const StatisticsPage: React.FC = () => {
   const barChartData = prepareBarChartData(monthlyStats.filter(stat => stat.year === selectedYear));
   const pieChartData = preparePieChartData(monthlyStat);
 
+  const hasBarData = barChartData.length > 0 && barChartData.some(d => d["Courriers Entrants"] > 0 || d["Courriers Départs"] > 0);
+  const hasPieData = pieChartData.length > 0;
+  const hasDetailData = monthlyStat && Object.values(monthlyStat.byType).some(count => count > 0);
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Navbar />
@@ -223,35 +227,47 @@ const StatisticsPage: React.FC = () => {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Résumé {selectedMonth} {selectedYear}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="border rounded-lg p-4 text-center">
-                  <p className="text-sm text-gray-500">Courriers Entrants</p>
-                  <p className="text-2xl font-bold text-agency-blue">
-                    {monthlyStat?.incomingCount || 0}
-                  </p>
+          {/* Résumé, n'affiche que s'il y a des courriers pour la période */}
+          {(monthlyStat && (monthlyStat.incomingCount > 0 || monthlyStat.outgoingCount > 0)) ? (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Résumé {selectedMonth} {selectedYear}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="border rounded-lg p-4 text-center">
+                    <p className="text-sm text-gray-500">Courriers Entrants</p>
+                    <p className="text-2xl font-bold text-agency-blue">
+                      {monthlyStat.incomingCount}
+                    </p>
+                  </div>
+                  <div className="border rounded-lg p-4 text-center">
+                    <p className="text-sm text-gray-500">Courriers Départs</p>
+                    <p className="text-2xl font-bold text-green-600">
+                      {monthlyStat.outgoingCount}
+                    </p>
+                  </div>
+                  <div className="border rounded-lg p-4 text-center col-span-2">
+                    <p className="text-sm text-gray-500">Total Courriers</p>
+                    <p className="text-2xl font-bold text-purple-600">
+                      {monthlyStat.incomingCount + monthlyStat.outgoingCount}
+                    </p>
+                  </div>
                 </div>
-
-                <div className="border rounded-lg p-4 text-center">
-                  <p className="text-sm text-gray-500">Courriers Départs</p>
-                  <p className="text-2xl font-bold text-green-600">
-                    {monthlyStat?.outgoingCount || 0}
-                  </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Résumé {selectedMonth} {selectedYear}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-center text-gray-400 h-32">
+                  Aucune donnée à afficher
                 </div>
-
-                <div className="border rounded-lg p-4 text-center col-span-2">
-                  <p className="text-sm text-gray-500">Total Courriers</p>
-                  <p className="text-2xl font-bold text-purple-600">
-                    {(monthlyStat?.incomingCount || 0) + (monthlyStat?.outgoingCount || 0)}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         <div className="grid grid-cols-1 gap-6 mb-8">
@@ -260,17 +276,21 @@ const StatisticsPage: React.FC = () => {
               <CardTitle className="text-lg">Évolution Mensuelle</CardTitle>
             </CardHeader>
             <CardContent className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={barChartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Bar dataKey="Courriers Entrants" fill="#3b82f6" />
-                  <Bar dataKey="Courriers Départs" fill="#10b981" />
-                </BarChart>
-              </ResponsiveContainer>
+              {hasBarData ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={barChartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Bar dataKey="Courriers Entrants" fill="#3b82f6" />
+                    <Bar dataKey="Courriers Départs" fill="#10b981" />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-80 flex items-center justify-center text-gray-400">Aucune donnée à afficher</div>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -281,25 +301,29 @@ const StatisticsPage: React.FC = () => {
               <CardTitle className="text-lg">Types de Courriers - {selectedMonth} {selectedYear}</CardTitle>
             </CardHeader>
             <CardContent className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={pieChartData}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="value"
-                  >
-                    {pieChartData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
+              {hasPieData ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={pieChartData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {pieChartData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-80 flex items-center justify-center text-gray-400">Aucune donnée à afficher</div>
+              )}
             </CardContent>
           </Card>
 
@@ -308,46 +332,51 @@ const StatisticsPage: React.FC = () => {
               <CardTitle className="text-lg">Détails par Type - {selectedMonth} {selectedYear}</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {monthlyStat && Object.entries(monthlyStat.byType).map(([type, count]) => (
-                  count > 0 && (
-                    <div key={type} className="flex items-center justify-between">
-                      <div className="flex items-center">
-                        <div
-                          className="w-3 h-3 rounded-full mr-2"
-                          style={{
-                            backgroundColor:
-                              type === "Administrative" ? "#3b82f6" :
+              {hasDetailData ? (
+                <div className="space-y-4">
+                  {monthlyStat && Object.entries(monthlyStat.byType).map(([type, count]) => (
+                    count > 0 && (
+                      <div key={type} className="flex items-center justify-between">
+                        <div className="flex items-center">
+                          <div
+                            className="w-3 h-3 rounded-full mr-2"
+                            style={{
+                              backgroundColor:
+                                type === "Administrative" ? "#3b82f6" :
                                 type === "Technical" ? "#10b981" :
-                                  type === "Commercial" ? "#f59e0b" :
-                                    type === "Financial" ? "#ef4444" :
-                                      "#8b5cf6"
-                          }}
-                        ></div>
-                        <span>{
-                          type === "Administrative" ? "Administratif" :
-                            type === "Technical" ? "Technique" :
-                              type === "Commercial" ? "Commercial" :
-                                type === "Financial" ? "Financier" :
-                                  "Autre"
-                        }</span>
+                                type === "Commercial" ? "#f59e0b" :
+                                type === "Financial" ? "#ef4444" :
+                                  "#8b5cf6"
+                            }}
+                          ></div>
+                          <span>{
+                            type === "Administrative" ? "Administratif" :
+                              type === "Technical" ? "Technique" :
+                                type === "Commercial" ? "Commercial" :
+                                  type === "Financial" ? "Financier" :
+                                    "Autre"
+                          }</span>
+                        </div>
+                        <div className="font-bold">{count}</div>
                       </div>
-                      <div className="font-bold">{count}</div>
+                    )
+                  ))}
+                  <div className="mt-6 pt-4 border-t">
+                    <div className="flex items-center justify-between font-bold">
+                      <span>Total</span>
+                      <span>{
+                        monthlyStat ?
+                          Object.values(monthlyStat.byType).reduce((sum, count) => sum + count, 0) :
+                          0
+                      }</span>
                     </div>
-                  )
-                ))}
-              </div>
-
-              <div className="mt-6 pt-4 border-t">
-                <div className="flex items-center justify-between font-bold">
-                  <span>Total</span>
-                  <span>{
-                    monthlyStat ?
-                      Object.values(monthlyStat.byType).reduce((sum, count) => sum + count, 0) :
-                      0
-                  }</span>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="flex items-center justify-center text-gray-400 h-32">
+                  Aucune donnée à afficher
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
